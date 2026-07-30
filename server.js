@@ -18,7 +18,15 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 app.use(express.json());
+
+// ============================================================
+// SERVE STATIC FILES FIRST
+// ============================================================
 app.use(express.static('dist'));
+
+// ============================================================
+// API ROUTES
+// ============================================================
 
 function jsonRes(res, body, status = 200) {
   return res.status(status).json(body);
@@ -41,9 +49,6 @@ async function requireOwner(apiKey) {
   if (result.plan !== 'owner') return { ok: false, error: 'Owner only' };
   return result;
 }
-
-// ---- Health ----
-app.get('/health', (req, res) => res.send('OK'));
 
 // ---- Auth ----
 app.post('/api/auth', async (req, res) => {
@@ -674,17 +679,25 @@ app.get('/files/v4/loaders/:id.lua', async (req, res) => {
   res.send(script.source_code);
 });
 
-// ---- Catch-all ----
+// ============================================================
+// HEALTH CHECK
+// ============================================================
+app.get('/health', (req, res) => res.send('OK'));
+
+// ============================================================
+// CATCH-ALL - MUST BE LAST
+// ============================================================
 app.get('*', (req, res) => {
   res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
 });
 
-// ---- Start with error handling ----
+// ============================================================
+// START SERVER
+// ============================================================
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Luarmen server running on port ${PORT}`);
 });
 
-// Handle graceful shutdown
 process.on('SIGTERM', () => {
   console.log('🛑 Received SIGTERM, shutting down gracefully...');
   server.close(() => {
