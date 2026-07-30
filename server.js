@@ -1,3 +1,4 @@
+cat > server.js << 'EOF'
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -8,18 +9,18 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// Serve your React app
+// Serve static files from dist
 app.use(express.static('dist'));
 
-// Catch-all - serves index.html for ANY route
+// THIS IS THE ONLY ROUTE - serves index.html for EVERY request
 app.get('*', (req, res) => {
   res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
 });
 
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(` Server running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Server running on port ${PORT}`);
 });
+EOF
 
-process.on('SIGTERM', () => {
-  server.close(() => process.exit(0));
-});
+# Kill the server to restart
+kill -9 1
