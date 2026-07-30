@@ -20,7 +20,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 app.use(express.json());
 
 // ============================================================
-// SERVE STATIC FILES FIRST
+// SERVE STATIC FILES (Your React app)
 // ============================================================
 app.use(express.static('dist'));
 
@@ -685,7 +685,7 @@ app.get('/files/v4/loaders/:id.lua', async (req, res) => {
 app.get('/health', (req, res) => res.send('OK'));
 
 // ============================================================
-// CATCH-ALL - MUST BE LAST
+// CATCH-ALL - MUST BE LAST! Serves your React app
 // ============================================================
 app.get('*', (req, res) => {
   res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
