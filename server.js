@@ -1,3 +1,4 @@
+cat > server.js << 'EOF'
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -44,6 +45,7 @@ async function requireOwner(apiKey) {
 
 app.get('/health', (req, res) => res.send('OK'));
 
+// ---- Auth ----
 app.post('/api/auth', async (req, res) => {
   const { username, password, api_key } = req.body;
   if (!username || !password) return jsonRes(res, { success: false, message: 'Username and password required' }, 400);
@@ -131,6 +133,7 @@ app.post('/api/auth', async (req, res) => {
   });
 });
 
+// ---- Verify ----
 app.post('/api/verify', async (req, res) => {
   const { key } = req.body;
   if (!key) return jsonRes(res, { valid: false, message: 'Key required' }, 400);
@@ -152,6 +155,7 @@ app.post('/api/verify', async (req, res) => {
   });
 });
 
+// ---- Upload ----
 app.post('/api/upload', async (req, res) => {
   const { api_key, script_name, source_code } = req.body;
   if (!api_key || !script_name || !source_code) return jsonRes(res, { error: 'Missing fields' }, 400);
@@ -204,6 +208,7 @@ app.post('/api/upload', async (req, res) => {
   });
 });
 
+// ---- Get scripts ----
 app.get('/api/scripts', async (req, res) => {
   const apiKey = req.query.api_key;
   if (!apiKey) return jsonRes(res, { error: 'API key required' }, 401);
@@ -220,6 +225,7 @@ app.get('/api/scripts', async (req, res) => {
   return jsonRes(res, { scripts: data || [] });
 });
 
+// ---- Stats ----
 app.get('/api/stats', async (req, res) => {
   const apiKey = req.query.api_key;
   if (!apiKey) return jsonRes(res, { error: 'API key required' }, 401);
@@ -240,6 +246,7 @@ app.get('/api/stats', async (req, res) => {
   return jsonRes(res, { total_scripts: totalScripts || 0, total_downloads: totalDownloads || 0 });
 });
 
+// ---- Update plan ----
 app.post('/api/update-plan', async (req, res) => {
   const { api_key, user_id, new_plan } = req.body;
   if (!api_key || !user_id || !new_plan) return jsonRes(res, { error: 'Missing fields' }, 400);
@@ -268,6 +275,7 @@ app.post('/api/update-plan', async (req, res) => {
   return jsonRes(res, { success: true, plan: new_plan });
 });
 
+// ---- Script endpoints ----
 app.get('/api/script/:id', async (req, res) => {
   const { id } = req.params;
   const apiKey = req.query.api_key;
@@ -360,6 +368,7 @@ app.post('/api/script/toggle-keyless', async (req, res) => {
   return jsonRes(res, { success: true, keyless_enabled: newStatus });
 });
 
+// ---- Owner routes ----
 app.get('/api/owner/all-users', async (req, res) => {
   const apiKey = req.query.api_key;
   if (!apiKey) return jsonRes(res, { error: 'API key required' }, 401);
@@ -586,6 +595,7 @@ app.post('/api/owner/source-view', async (req, res) => {
   return jsonRes(res, { success: true, enabled });
 });
 
+// ---- Loader ----
 app.get('/files/v4/loaders/:id.lua', async (req, res) => {
   const loaderId = req.params.id;
   const loaderPath = `/files/v4/loaders/${loaderId}.lua`;
@@ -664,10 +674,38 @@ app.get('/files/v4/loaders/:id.lua', async (req, res) => {
   res.send(script.source_code);
 });
 
+// ---- Catch-all ----
 app.get('*', (req, res) => {
   res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
 });
 
-app.listen(PORT, () => {
+// ---- Start with error handling ----
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Luarmen server running on port ${PORT}`);
 });
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('🛑 Received SIGTERM, shutting down gracefully...');
+  server.close(() => {
+    console.log('👋 Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('🛑 Received SIGINT, shutting down gracefully...');
+  server.close(() => {
+    console.log('👋 Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('💥 Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('💥 Unhandled Rejection:', reason);
+});
+EOF
